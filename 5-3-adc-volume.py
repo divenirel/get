@@ -1,59 +1,55 @@
-import RPi.GPIO as gpio
+  
+import RPi.GPIO as GPIO
 import time
 
-
-dac = [ 26, 19, 13, 6, 5, 11, 9, 10 ]
-leds = [ 21, 20, 16, 12, 7, 8, 25, 24 ]
-comp = 4
+dac = [26, 19, 13, 6, 5, 11, 9, 10]
+leds = [21, 20, 16, 12, 7, 8, 25, 24]
+bits = len(dac)
+levels = 2**bits
+maxU = 3.3
 troyka = 17
-Vref = 3.3
-#outpin = 2
-bdepth = 8 #хардкод разрядности
+comp = 4
 
-gpio.setmode( gpio.BCM )
-
-gpio.setup( dac, gpio.OUT, initial=gpio.LOW )
-gpio.setup( leds, gpio.OUT, initial=gpio.LOW )
-gpio.setup( troyka, gpio.OUT, initial=gpio.HIGH )
-gpio.setup( comp, gpio.IN )
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(dac + leds, GPIO.OUT, initial = GPIO.LOW)
+GPIO.setup(troyka, GPIO.OUT, initial = GPIO.HIGH)
+GPIO.setup(comp, GPIO.IN)
 
 
-def decimal2binary( value ):
-    return [int(bit) for bit in bin( value ) [2:].zfill( bdepth )]
+def dec2bin (value):
+    return [int(bin) for bin in bin(value)[2:].zfill(bits)]
+
+def bin2dac(value):
+    signal = dec2bin(value)
+    GPIO.output(dac, signal)
+    return signal
 
 def adc():
-    retvalue = 0
-    decVtest = 0
-    for testbit in reversed( range( bdepth ) ):
-        decVtest = retvalue + 2 ** testbit
-        gpio.output( dac, decimal2binary( decVtest ) )
-        #print( decVtest )
-        time.sleep( 0.0001 )
-        #time.sleep( 0.1 )
-        compsignal = gpio.input( comp )
+    value = 0
+    for i in range(8):
+        value = value + 2**(7 - i)
+        signal = bin2dac(value)
+        time.sleep(0.009)
+        compValue = GPIO.input(comp)
+        if compValue == 0:
+            value = value - 2**(7 - i)
+        voltage = value / levels * maxU
+    print (" Digital value: {:^3} -> {}, Analog value: {:.2f}".format(value, signal, voltage))
+    return voltage
 
-        if compsignal == 1: #если значение на ЦАП не больше исследуемого
-            retvalue += 2 ** testbit
-            #print( 'true' )
-
-    return retvalue
+def volumeBar():
+    volume = adc()
+    if (volume == 0):
+        GPIO.output(leds, 0)
+    for i in range(8):
+        if (volume > maxU * i / bits):
+            GPIO.output(leds[i], 1) 
+        else: 
+            GPIO.output(leds[i], 0)
 
 
 try:
     while True:
-        decVfind = adc()
-        binVfind = decimal2binary( decVfind )
-        gpio.output( leds, binVfind )
-
-        print('decimal V = {}'.format( decVfind ))
-        print('binary V = {}'.format( binVfind ))
-        print('V = {}'.format( decVfind / ( 2 ** bdepth ) * Vref ))
-        print( '' )
-        #time.sleep( 1 )
-
-
+        volumeBar() 
 finally:
-    gpio.output( dac, 0 )
-    gpio.output( troyka, 0 )
-    gpio.output( leds, 0 )
-    gpio.cleanup()
+    GPIO.cleanup()
