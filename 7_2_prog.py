@@ -60,7 +60,7 @@ try:
     with open('data.txt', 'w') as outputfile1: # Создаем файл data.txt
         for i in range(len(spisok)):
             outputfile1.write(str(spisok[i])+ '\n')
-    with open('settings.txt', 'w') as outputfile2: # Создаем файл settings.txt
+    with open('settings.txt', 'w') as outputfile2: # Создаем фай settings.txt
             outputfile2.write('T = '+ str(T) + '\n')
             outputfile2.write('dV = ' + str(dv)+ '\n')
             outputfile2.write('vremya = ' + str(end - start)+ '\n') 
