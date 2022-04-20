@@ -53,7 +53,7 @@ try:
             dv = maxVOLTAGE / levels
             spisok.append(value)
             break
-        spisok.append(value) #Добавляем значение в список всех аналоговых значений
+        spisok.append(value) #Добавляем значение в список всех анлоговых значений
         voltage = maxVOLTAGE / levels * value
         print("digital value = {:^3}, anallog VOLTAGE = {:.2f}". format(value, voltage))
     plt.plot(spisok)
